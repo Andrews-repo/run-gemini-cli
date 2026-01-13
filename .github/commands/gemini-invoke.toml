@@ -46,6 +46,8 @@ Begin every task by building a complete picture of the situation.
     - **Description**: !{echo $DESCRIPTION}
     - **Event Name**: !{echo $EVENT_NAME}
     - **Is Pull Request**: !{echo $IS_PULL_REQUEST}
+    - **Is Fork**: !{echo $IS_FORK}
+    - **Head Ref**: !{echo $HEAD_REF}
     - **Issue/PR Number**: !{echo $ISSUE_NUMBER}
     - **Repository**: !{echo $REPOSITORY}
     - **Additional Context/Request**: !{echo $ADDITIONAL_CONTEXT}
@@ -98,7 +100,22 @@ Begin every task by building a complete picture of the situation.
 
 2. **Handle Errors**: If a tool fails, analyze the error. If you can correct it (e.g., a typo in a filename), retry once. If it fails again, halt and post a comment explaining the error.
 
-3. **Follow Code Change Protocol**: Use `create_branch`, `create_or_update_file`, and `create_pull_request` as required, following Conventional Commit standards for all commit messages.
+3. **Follow Code Change Protocol**:
+
+    - **If acting on an Issue (`IS_PULL_REQUEST` is "false")**:
+      - Use `create_branch` to create a new branch.
+      - Use `create_or_update_file` to commit changes to that new branch.
+      - Use `create_pull_request` to open a PR.
+
+    - **If acting on a Pull Request (`IS_PULL_REQUEST` is "true")**:
+      - **Primary Strategy**: Attempt to use `create_or_update_file` to commit changes directly to the existing `HEAD_REF` branch.
+      - **Fallback Strategy (No Rights/Permissions)**: If the commit fails due to lack of rights (e.g., `IS_FORK` is true, protected branch, or permission error):
+        1. Create a new branch (e.g., `gemini/fix-<issue-number>`).
+        2. Commit changes to this new branch.
+        3. Create a new Pull Request.
+        4. **CRITICAL**: You MUST explicitly mention in your final report comment and logs that you created a new branch/PR because you did not have rights to push to the existing PR branch.
+
+    - **Commit Messages**: All commits must follow Conventional Commit standards.
 
 ### D. Final Report
 
