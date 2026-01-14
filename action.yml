@@ -215,6 +215,17 @@ runs:
         mkdir -p ~/.gemini
         echo "${OAUTH_CREDENTIALS}" > ~/.gemini/oauth_creds.json
         chmod 600 ~/.gemini/oauth_creds.json
+
+        # Create settings.json with OAuth auth type selected
+        cat > ~/.gemini/settings.json <<'SETTINGS_EOF'
+        {
+          "security": {
+            "auth": {
+              "selectedType": "oauth-personal"
+            }
+          }
+        }
+        SETTINGS_EOF
       shell: 'bash'
       env:
         OAUTH_CREDENTIALS: '${{ inputs.gemini_oauth_credentials }}'
