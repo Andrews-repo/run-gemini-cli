@@ -41,6 +41,13 @@ inputs:
   gemini_api_key:
     description: 'The API key for the Gemini API.'
     required: false
+  gemini_oauth_credentials:
+    description: 'OAuth credentials JSON for Gemini. If provided with use_oauth=true, will be written to ~/.gemini/oauth_creds.json.'
+    required: false
+  use_oauth:
+    description: 'Whether to use OAuth authentication instead of API key.'
+    required: false
+    default: 'false'
   gemini_cli_version:
     description: 'The version of the Gemini CLI to install. Can be "latest", "preview", "nightly", a specific version number, or a git branch, tag, or commit. For more information, see [Gemini CLI releases](https://github.com/google-gemini/gemini-cli/blob/main/docs/releases.md).'
     required: false
@@ -128,13 +135,14 @@ runs:
         if [[ "${INPUT_GEMINI_API_KEY_PRESENT:-false}" == "true" ]]; then ((++auth_methods)); fi
         if [[ "${INPUT_GOOGLE_API_KEY_PRESENT:-false}" == "true" ]]; then ((++auth_methods)); fi
         if [[ "${INPUT_GCP_WORKLOAD_IDENTITY_PROVIDER_PRESENT:-false}" == "true" ]]; then ((++auth_methods)); fi
+        if [[ "${INPUT_USE_OAUTH:-false}" == "true" && "${INPUT_GEMINI_OAUTH_CREDENTIALS_PRESENT:-false}" == "true" ]]; then ((++auth_methods)); fi
 
         if [[ ${auth_methods} -eq 0 ]]; then
-          warn "No authentication method provided. Please provide one of 'gemini_api_key', 'google_api_key', or 'gcp_workload_identity_provider'."
+          warn "No authentication method provided. Please provide one of 'gemini_api_key', 'google_api_key', 'gcp_workload_identity_provider', or 'gemini_oauth_credentials' with 'use_oauth=true'."
         fi
 
         if [[ ${auth_methods} -gt 1 ]]; then
-          warn "Multiple authentication methods provided. Please use only one of 'gemini_api_key', 'google_api_key', or 'gcp_workload_identity_provider'."
+          warn "Multiple authentication methods provided. Please use only one of 'gemini_api_key', 'google_api_key', 'gcp_workload_identity_provider', or 'gemini_oauth_credentials'."
         fi
 
         # Validate Workload Identity Federation inputs
@@ -174,9 +182,11 @@ runs:
         INPUT_GCP_WORKLOAD_IDENTITY_PROVIDER_PRESENT: "${{ inputs.gcp_workload_identity_provider != '' }}"
         INPUT_GCP_PROJECT_ID_PRESENT: "${{ inputs.gcp_project_id != '' }}"
         INPUT_GCP_SERVICE_ACCOUNT_PRESENT: "${{ inputs.gcp_service_account != '' }}"
+        INPUT_GEMINI_OAUTH_CREDENTIALS_PRESENT: "${{ inputs.gemini_oauth_credentials != '' }}"
         INPUT_GCP_TOKEN_FORMAT: '${{ inputs.gcp_token_format }}'
         INPUT_USE_VERTEX_AI: '${{ inputs.use_vertex_ai }}'
         INPUT_USE_GEMINI_CODE_ASSIST: '${{ inputs.use_gemini_code_assist }}'
+        INPUT_USE_OAUTH: '${{ inputs.use_oauth }}'
 
     - name: 'Sanitize workflow name'
       id: 'sanitize_workflow_name'
@@ -196,6 +206,18 @@ runs:
       shell: 'bash'
       env:
         SETTINGS: '${{ inputs.settings }}'
+
+    - name: 'Configure OAuth Credentials'
+      if: |-
+        ${{ inputs.use_oauth == 'true' && inputs.gemini_oauth_credentials != '' }}
+      run: |-
+        set -euo pipefail
+        mkdir -p ~/.gemini
+        echo "${OAUTH_CREDENTIALS}" > ~/.gemini/oauth_creds.json
+        chmod 600 ~/.gemini/oauth_creds.json
+      shell: 'bash'
+      env:
+        OAUTH_CREDENTIALS: '${{ inputs.gemini_oauth_credentials }}'
 
     - name: 'Install Custom Commands'
       shell: 'bash'
