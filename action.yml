@@ -360,22 +360,22 @@ runs:
 
 
         # Set the captured response as a step output, supporting multiline
-        echo "gemini_response<<EOF" >> "${GITHUB_OUTPUT}"
+        echo "gemini_response<<GEMINI_OUTPUT_DELIMITER_END" >> "${GITHUB_OUTPUT}"
         if [[ -n "${RESPONSE}" ]]; then
           echo "${RESPONSE}" >> "${GITHUB_OUTPUT}"
         else
           cat "${TEMP_STDOUT}" >> "${GITHUB_OUTPUT}"
         fi
-        echo "EOF" >> "${GITHUB_OUTPUT}"
+        echo "GEMINI_OUTPUT_DELIMITER_END" >> "${GITHUB_OUTPUT}"
 
         # Set the captured errors as a step output, supporting multiline
-        echo "gemini_errors<<EOF" >> "${GITHUB_OUTPUT}"
+        echo "gemini_errors<<GEMINI_OUTPUT_DELIMITER_END" >> "${GITHUB_OUTPUT}"
         if [[ -n "${ERROR_JSON}" ]]; then
           echo "${ERROR_JSON}" >> "${GITHUB_OUTPUT}"
         else
           cat "${TEMP_STDERR}" >> "${GITHUB_OUTPUT}"
         fi
-        echo "EOF" >> "${GITHUB_OUTPUT}"
+        echo "GEMINI_OUTPUT_DELIMITER_END" >> "${GITHUB_OUTPUT}"
 
         # Generate Job Summary
         if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
